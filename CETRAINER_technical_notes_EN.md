@@ -20,6 +20,8 @@ Two independent cases were investigated:
 - **Watch Dogs / Barracuda / Cheat Engine 6.7**
 - **Splinter Cell: Blacklist / MrAntiFun / Cheat Engine 6.4, 32-bit**
 
+**File-discovery condition for both cases:** the corresponding standalone trainer `.exe` had to be running. The files under investigation and temporarily unpacked components were located via `%TEMP%\cetrainers` (equivalently written as `%temp%/cetrainers`) while the trainer was running. This is an important part of the acquisition procedure: the report does not assume these files were necessarily present next to the `.exe` before launch.
+
 ## 2. Original Projects and Algorithms
 
 Primary sources:
@@ -90,7 +92,7 @@ The file under investigation was `CET_TRAINER.CETRAINER`.
 | Cheat Engine version | 6.7, confirmed in the recovered LuaScript |
 | Target process | `watch_dogs.exe` |
 
-The file was present inside the standalone trainer's `CET_Archive.dat`. After extraction, its size and SHA-256 matched those of a separate `CET_TRAINER.CETRAINER` copy used in earlier diagnostic attempts.
+To obtain the files for this case, the standalone trainer `.exe` had to be running; the relevant files were located via `%TEMP%\cetrainers` during execution. `CET_TRAINER.CETRAINER` was present inside the standalone trainer's `CET_Archive.dat`. After extraction, its size and SHA-256 matched those of a separate `CET_TRAINER.CETRAINER` copy used in earlier diagnostic attempts.
 
 ### 3.2. Why the Original Script Did Not Work
 
@@ -179,7 +181,9 @@ I do not claim that this variant is used by all Barracuda trainers. This conclus
 
 ### 4.1. Input Materials and Engine Version
 
-At the beginning of the investigation, the source container was the `CET_Archive.dat` archive (4,426,978 bytes). The following components were extracted from or identified during archive analysis:
+This case also required the standalone trainer `.exe` to be running. While it was active, the files under investigation were located via the temporary directory `%TEMP%\cetrainers`; running the `.exe` was a prerequisite for accessing these runtime files.
+
+The initial analysis container was the `CET_Archive.dat` archive (4,426,978 bytes), found during this procedure. The following components were extracted from or identified during archive analysis:
 
 - `defines.lua`;
 - `lua5.1-32.dll`;
