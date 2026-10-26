@@ -179,16 +179,15 @@ I do not claim that this variant is used by all Barracuda trainers. This conclus
 
 ### 4.1. Input Materials and Engine Version
 
-The temporary and supporting files included:
+The case materials included the archive `CET_Archive.dat` (4,426,978 bytes), the diagnostic script `decrypt_cetrainer_mrantifun.py` (5,977 bytes), and components extracted from or identified during analysis of the archive:
 
-- `CET_Archive.dat`, 4,426,978 bytes;
-- `CET_TRAINER.CETRAINER.decoded.CT`, 868,923 bytes;
-- `decrypt_cetrainer_mrantifun.py`, 5,977 bytes;
 - `defines.lua`;
 - `lua5.1-32.dll`;
 - `dbghelp.dll`;
 - an embedded Cheat Engine executable, 7,702,528 bytes;
 - an outer trainer executable, 200,888 bytes.
+
+**Clarification about the decoded file's name:** `CET_TRAINER.CETRAINER.decoded.CT` (868,923 bytes) is not a separate entry in the original archive and is not an independent validation file. It is the same decoded XML content produced by running `decrypt_cetrainer_mrantifun.py` and saved as `CET_TRAINER.CETRAINER.decoded.xml`; `.CT` is simply an alternate filename/extension for the same content. Therefore, the `.CT` file must not be treated as an independent reference or as separate evidence that decoding was correct.
 
 The embedded engine contained the string `Cheat Engine 6.4`. Its PE header confirms Intel i386 (PE32) architecture, and `lua5.1-32.dll` is consistent with a 32-bit build.
 
@@ -258,7 +257,7 @@ The observed sequence was:
 4. The first four bytes of the decompressed result were `3B 42 0D 00`, which is the little-endian value `868923`.
 5. Removing those four bytes produced an XML file of 868,923 bytes.
 
-I then compared this result with `CET_TRAINER.CETRAINER.decoded.CT`, which was already present in the archive.
+The file named `CET_TRAINER.CETRAINER.decoded.CT` in the working materials is not a separate file from the archive and does not represent an independent control copy. It has the same decoded table content as the output saved by the script as `CET_TRAINER.CETRAINER.decoded.xml`, with only the extension changed to `.CT`. Comparing these two filenames therefore does not constitute an independent validation of the result.
 
 | Check | Result |
 |---|---|
@@ -271,15 +270,15 @@ I then compared this result with `CET_TRAINER.CETRAINER.decoded.CT`, which was a
 | Number of forms | 3 (`UDF1`, `UDF2`, `UDF3`) |
 | Number of `CheatEntry` elements | 7 |
 
-The SHA-256 of the re-decoded XML **matched exactly** the SHA-256 of the `.CT` file from the archive. This confirms that the script reproducibly recovered the same output.
+The SHA-256 shown above records the checksum of the decoded XML output. Because `CET_TRAINER.CETRAINER.decoded.CT` is the same decoded XML content under a different extension, its hash is not independent evidence that decoding was correct. Validation in this case rests on successful raw-DEFLATE decompression, agreement between the length field and the actual output size, successful XML parsing, and the expected table structure.
 
 A naming discrepancy was also found: the outer trainer file is labeled `+6`, while the table's internal name contains `+7`. The reason for this discrepancy has not been established.
 
 ### 4.6. MrAntiFun Case Summary
 
-In this case, we did not discover an unknown key sequence: the `2A AD 2B 41` profile was already documented in AlexAltea's original script. Our contribution was to improve diagnostics, handle the buffer more cautiously, test different decompression modes, and validate the output by size and SHA-256.
+In this case, we did not discover an unknown key sequence: the `2A AD 2B 41` profile was already documented in AlexAltea's original script. Our contribution was to improve diagnostics, handle the buffer more cautiously, and test different decompression modes. The result was checked against the length field, successful XML parsing, and the expected table structure; the SHA-256 records the output file's checksum but is not compared here against an independent reference.
 
-Unlike the Barracuda case, here we were able to extract the original protected file from the archive container again and reproduce decoding to an output that matched the XML table already supplied in the archive.
+Unlike the Barracuda case, here we were able to extract the original protected file from the archive container and decode it into a valid XML table. `CET_TRAINER.CETRAINER.decoded.CT` is not a separate archive entry or an independent reference: it is the same decoded content saved with the `.xml` extension.
 
 ---
 
@@ -297,7 +296,7 @@ Unlike the Barracuda case, here we were able to extract the original protected f
 | Length field after decompression | First four bytes | First four bytes |
 | XML size | 357,448 bytes | 868,923 bytes |
 | XML SHA-256 | `3fc8017e7a417ec38e675dcb357839f10b7bfe8f63fff371953a0fd2f7a8bb08` | `1199d1f301d20b7abe42640b6cbc7b31a0141d048878fa9eeac655dd3634a136` |
-| Main finding | A separate variant not covered by the tested profiles | Successful use of an existing profile and reproducible output-hash match |
+| Main finding | A separate variant not covered by the tested profiles | Successful use of an existing profile and structural XML validation |
 
 Both cases show that the same `.CETRAINER` extension does not guarantee the same protection scheme. The first two XOR passes have the same structure, but the additional passes, keys, and headers differ.
 
