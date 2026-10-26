@@ -179,7 +179,7 @@ I do not claim that this variant is used by all Barracuda trainers. This conclus
 
 ### 4.1. Input Materials and Engine Version
 
-The case materials included the archive `CET_Archive.dat` (4,426,978 bytes), the diagnostic script `decrypt_cetrainer_mrantifun.py` (5,977 bytes), and components extracted from or identified during analysis of the archive:
+At the beginning of the investigation, the source container was the `CET_Archive.dat` archive (4,426,978 bytes). The following components were extracted from or identified during archive analysis:
 
 - `defines.lua`;
 - `lua5.1-32.dll`;
@@ -187,7 +187,9 @@ The case materials included the archive `CET_Archive.dat` (4,426,978 bytes), the
 - an embedded Cheat Engine executable, 7,702,528 bytes;
 - an outer trainer executable, 200,888 bytes.
 
-**Clarification about the decoded file's name:** `CET_TRAINER.CETRAINER.decoded.CT` (868,923 bytes) is not a separate entry in the original archive and is not an independent validation file. It is the same decoded XML content produced by running `decrypt_cetrainer_mrantifun.py` and saved as `CET_TRAINER.CETRAINER.decoded.xml`; `.CT` is simply an alternate filename/extension for the same content. Therefore, the `.CT` file must not be treated as an independent reference or as separate evidence that decoding was correct.
+Important chronology note: `decrypt_cetrainer_mrantifun.py` **was not part of the initial input materials**. We first consulted AlexAltea's original `unpack_cet_mrantifun.py`, reviewed its implementation, and identified problems that were subsequently fixed in our own diagnostic version. Sections 4.3–4.4 describe this sequence.
+
+**Clarification about the decoded file's name:** `CET_TRAINER.CETRAINER.decoded.CT` (868,923 bytes) is not a separate entry in the original archive and is not an independent validation file. It contains the same decoded XML content saved as `CET_TRAINER.CETRAINER.decoded.xml`; `.CT` is simply an alternate filename/extension for the same content. Therefore, the `.CT` file must not be treated as an independent reference or separate evidence that decoding was correct.
 
 The embedded engine contained the string `Cheat Engine 6.4`. Its PE header confirms Intel i386 (PE32) architecture, and `lua5.1-32.dll` is consistent with a 32-bit build.
 
@@ -209,7 +211,7 @@ The extracted file has the following properties:
 
 This made it possible to move from the outer trainer executable to the content directly processed by the decoder.
 
-### 4.3. What Was in AlexAltea's Original Script
+### 4.3. Reviewing AlexAltea's Original Script
 
 The original `unpack_cet_mrantifun.py` contains three sequences of initial keys:
 
@@ -223,18 +225,26 @@ Each value defines a separate XOR pass over the entire buffer. During each pass,
 
 If the result begins with `CHEAT`, the script skips the five-byte header and decompresses the remaining data using raw DEFLATE. After decompression, the first four bytes are removed as the length field.
 
-**The `2A AD 2B 41` sequence was already present in the original project.** We did not rediscover it; the task was to apply this profile to the extracted file, improve diagnostics, and validate the resulting output.
+**The `2A AD 2B 41` sequence was already present in the original project.** We did not rediscover that profile; it was documented by AlexAltea and was suitable for testing against the extracted file.
 
-### 4.4. Changes in Our Version
+Reviewing the original code revealed several problems:
 
-Our diagnostic `decrypt_cetrainer_mrantifun.py` retains the original profiles and order of key passes, while providing more information about the processing steps.
+- The unprotected-XML check is written as `if str(data[:5]) == "<?xml":`. For `bytes`/`bytearray` in Python 3, this compares the object's string representation with the text marker, so it does not work as intended. The code should compare the bytes themselves, for example with `b"<?xml"`.
+- The `except Exception as e: pass` block silently discards errors from all decompression attempts. This makes it difficult to tell which profile or processing stage failed.
+- In the `CHEAT` branch, the first four decompressed bytes are removed without checking that they are a length field and that the remaining data is actually XML.
+
+After reviewing AlexAltea's `unpack_cet_mrantifun.py`, we therefore created our own `decrypt_cetrainer_mrantifun.py` and added fixes and diagnostic checks. Our file is an output of the next stage of the work, not an initial case input.
+
+### 4.4. Fixes in Our Version
+
+Our `decrypt_cetrainer_mrantifun.py` retains the original key profiles and pass order, while fixing the issues listed above and making the output easier to validate.
 
 The following were added:
 
+- checking XML against the actual bytes instead of comparing `str(data[:5])` with a string;
 - reporting the input file size, SHA-256, and initial prefix;
-- displaying the result after the two chained XOR passes;
-- showing the key profile being tested;
-- displaying the byte prefix after transformation;
+- displaying the result after the two chained XOR passes and the prefix after each key profile;
+- reporting decompression errors instead of silently discarding them;
 - trying raw DEFLATE, zlib, and gzip;
 - reporting the decompressed candidate's length and SHA-256;
 - removing the four-byte field only when the result after removal appears XML-like;
@@ -243,9 +253,9 @@ The following were added:
 
 One limitation of this diagnostic version is that `looks_like_xml()` checks the initial bytes but does not fully validate the XML structure. The resulting XML was therefore parsed separately.
 
-### 4.5. Rerun and Validation
+### 4.5. Running the Fixed Version and Validation
 
-After extracting the original protected `.CETRAINER`, I ran our diagnostic script again.
+After extracting the protected `.CETRAINER` and fixing the identified problems, I ran our own `decrypt_cetrainer_mrantifun.py` against that file.
 
 The `2A:AD:2B:41` profile was tested first and proved to be suitable.
 
