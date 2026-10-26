@@ -9,7 +9,7 @@ Technical research into CETRAINER protection and decoding.
 
 ## Contents
 
-- `CETRAINER_technical_notes.md` — detailed technical notes.
+- `CETRAINER_technical_notes_EN.md` OR `CETRAINER_technical_notes_RU.md` — detailed technical notes.
 - `scripts/` — Python decoding and diagnostic scripts.
 
 ## Scope
