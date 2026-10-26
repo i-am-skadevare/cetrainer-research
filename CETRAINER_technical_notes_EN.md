@@ -108,6 +108,8 @@ Early logs recorded raw-DEFLATE errors, including:
 
 This indicated that the resulting byte sequences did not match the expected compressed stream.
 
+Thus, we first tested AlexAltea's original `unpack_cet_barracuda.py` and diagnostic variants, but they were insufficient for the sample under investigation. Only afterward did we refine the approach and incorporate the discovered changes into our own `decrypt_cetrainer_barracuda.py`. That script was an output of the next research stage, not an initial input file.
+
 We also expanded the diagnostic attempts: testing multiple decompression methods, headers, and possible offsets while recording byte prefixes and candidate hashes.
 
 The initial key-search mode had a limitation for files larger than 131,072 bytes. The search was later reworked: instead of processing the entire file at every step, it first checks a prefix of up to 16 KiB. This reduced unnecessary work, but did not automatically discover the required variant.
